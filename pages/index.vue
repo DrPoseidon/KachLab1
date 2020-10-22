@@ -43,7 +43,9 @@ export default {
       profit: [],
       working_hours: [],
       err: '',
-      isError: false
+      isError: false,
+      xes: false,
+      firstMatr: false
     }
   },
   watch: {
@@ -120,7 +122,7 @@ export default {
         }
       })
     },
-    simMethod (simMatrix, emptyMatrix) {
+    simMethod (simMatrix, emptyMatrix, mEl) {
       let min = 0
       let minCol = false
       let minRow = {
@@ -153,6 +155,7 @@ export default {
               if (j == minCol.index) {
                 if (j != 0) {
                   const division = (simMatrix[i][1] / simMatrix[i][j])
+                  console.log('division', division, simMatrix[i][1], '/', simMatrix[i][j], '[', simMatrix[i][0], '/', simMatrix[0][j], ']')
                   if (division >= 0 && division < minRow.min) {
                     minRow.min = division
                     minRow.index = i
@@ -175,8 +178,8 @@ export default {
             if (j != 0 && i != 0) {
               if (i == minRow.index) {
                 emptyMatrix[i][j] = simMatrix[i][j] / simMatrix[minRow.index][minCol.index]
-              } else {
-                emptyMatrix[i][j] = simMatrix[i][j] - (emptyMatrix[minRow.index][j] * simMatrix[i][minCol.index])
+                console.log(simMatrix[minRow.index][minCol.index])
+                console.log('[', i, ',', j, ']', simMatrix[i][j], '/', simMatrix[minRow.index][minCol.index])
               }
             }
           }
@@ -187,12 +190,16 @@ export default {
             if (j != 0 && i != 0) {
               if (i != minRow.index) {
                 emptyMatrix[i][j] = simMatrix[i][j] - (emptyMatrix[minRow.index][j] * simMatrix[i][minCol.index])
+                console.log('[', i, ',', j, ']', simMatrix[i][j], '-', emptyMatrix[minRow.index][j], '*', simMatrix[i][minCol.index])
               }
             }
           }
         }
-
         simMatrix = emptyMatrix
+        console.log(minRow, minCol)
+        simMatrix.forEach((el) => {
+          console.log(el)
+        })
 
         for (let i = 0; i < emptyMatrix.length; i++) {
           for (let j = 0; j < emptyMatrix[i].length; j++) {
@@ -213,17 +220,70 @@ export default {
           index: 0,
           x: ''
         }
+        console.log('//////////////////////////////////////////////////////////////////////////////////////////////////////////')
       }
+      const xes = []
+
+      simMatrix.forEach((el, index) => {
+        el.forEach((el1, index1) => {
+          if (index == 0 && index1 > 1 && index1 < mEl.length + 2) {
+            xes.push(el1)
+          }
+        })
+      })
+      const xes1 = {}
+      simMatrix.forEach((el, index) => {
+        el.forEach((el1, index1) => {
+          if (index1 == 0 && index != 0) {
+            if (index != simMatrix.length - 1) {
+              if (xes.includes(el1)) {
+                xes1[el1] = simMatrix[index][1]
+              }
+            } else {
+              xes1[el1] = simMatrix[index][1]
+            }
+          }
+        })
+      })
+      this.xes = xes1
+
       return simMatrix
     },
     calculate () {
       // const mEl = [[0.7, 0.4, 0.5], [0.2, 0.4, 0.6]]
       // const prof = [5, 3]
       // const wH = [40, 36, 36]
+      const mEl = [[1.1, 7, 3, 5], [20.5, 3, 5, 2], [13.4, 3, 10, 11]]
+      const prof = [4.2, 5, 9]
+      const wH = [150, 120.3, 100, 130]
 
-      const mEl = [[2, 0], [1, 2]]
-      const prof = [2, 5]
-      const wH = [430, 460]
+      // const mEl = [[2, 0], [1, 2]]
+      // const prof = [2, 5]
+      // const wH = [430, 460]
+
+      // const mEl = this.matrix_elements
+      // const prof = this.profit
+      // const wH = this.working_hours
+
+      mEl.forEach((el) => {
+        el.forEach((el1) => {
+          if (typeof el1 == 'string') {
+            el1 = parseFloat(el1)
+          }
+        })
+      })
+
+      prof.forEach((el) => {
+        if (typeof el == 'string') {
+          el = parseFloat(el)
+        }
+      })
+
+      wH.forEach((el) => {
+        if (typeof el == 'string') {
+          el = parseFloat(el)
+        }
+      })
 
       const simMatrix = []
       const emptyMatrix = []
@@ -264,7 +324,6 @@ export default {
           }
         }
       }
-
       for (let i = 0; i < simMatrix.length; i++) {
         for (let j = 0; j < simMatrix[i].length; j++) {
           if (i != 0 && j != 0) {
@@ -291,8 +350,10 @@ export default {
           }
         }
       }
-
-      console.log(this.simMethod(simMatrix, emptyMatrix))
+      this.firstMatr = simMatrix
+      console.log(this.firstMatr)
+      console.log(this.simMethod(simMatrix, emptyMatrix, mEl))
+      console.log(this.xes)
     }
   }
 }
