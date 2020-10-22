@@ -1,11 +1,67 @@
 <template>
   <div class="container">
-    Укажите количество видов продукции <b-input v-model="noc" type="number" class="input" />
-    Укажите количество оборудования, используемого при производстве <b-input v-model="top" type="number" class="input" />
+    <div v-if="success" class="A">
+      <div class="a_text">
+        A=
+      </div>
+      <div class="a_row">
+        <div v-for="(el,index) in firstMatrix" :key="index">
+          <div style="display:flex">
+            <div v-for="(el1,index1) in el" :key="index1">
+              <div class="a_row_el">
+                <div v-if="index !=0 && index1 !=0">
+                  {{ el1.toFixed(3) }}
+                </div>
+                <div v-else>
+                  {{ el1 }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="success" class="Y">
+      <div class="y_text">
+        Y=
+      </div>
+      <div class="y_row">
+        <div v-for="(el,index) in y" :key="index">
+          <div v-for="(el1,index1) in el" :key="index1">
+            <div class="y_row_el">
+              {{ el1.toFixed(3) }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-if="success">
+        <div v-for="(el,index) in xes" :key="index" class="xes">
+          <div v-if="index!='f(x)'" class="xx">
+            {{ index }} = {{ el.toFixed(3) }}
+          </div>
+          <div v-else class="fx">
+            {{ index }} = {{ el.toFixed(3) }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="success == false">
+      Укажите количество видов продукции <b-input v-model="noc" type="number" class="input" />
+    </div>
+    <div v-if="success == false">
+      Укажите количество оборудования, используемого при производстве <b-input v-if="success == false" v-model="top" type="number" class="input" />
+    </div>
+    <div v-if="!success">
+      <b-button @click="fill = true">
+        Заполнить
+      </b-button>
+    </div>
     <div v-if="err != ''" class="error_div">
       {{ err }}
     </div>
-    <div class="matrix">
+    <div v-if="success == false" class="matrix">
       <div v-for="(i,indexi) in matrix" :key="indexi">
         <div class="mat-row">
           {{ `Продукт ${indexi+1}` }}
@@ -15,14 +71,14 @@
         </div>
       </div>
     </div>
-    <div v-if="matrix.length != 0">
+    <div v-if="matrix.length != 0 && success == false">
       Введите прибыль от изделий
       <div v-for="(el,key) in matrix.length" :key="key">
-        <b-input v-model="profit[key]" :class="{err: isError}" type="number" class="input1" />
+        <b-input v-model="profit[key]" :class="{err: isError}" type="number" class="input1" :placeholder="key+1" />
       </div>
       Введите время работы оборудования
       <div v-for="(el,key) in matrix[0].length" :key="key">
-        <b-input v-model="working_hours[key]" :class="{err: isError}" type="number" class="input1" />
+        <b-input v-model="working_hours[key]" :class="{err: isError}" type="number" :placeholder="key+1" class="input1" />
       </div>
       <b-button :variant="primary" @click="calculate">
         Вычислить
@@ -45,7 +101,10 @@ export default {
       err: '',
       isError: false,
       xes: false,
-      firstMatr: false
+      y: false,
+      success: false,
+      fill: false,
+      firstMatrix: false
     }
   },
   watch: {
@@ -66,10 +125,14 @@ export default {
           this.createMatrix()
         }
       }
+    },
+    fill () {
+      if (this.fill) {
+        this.calculate()
+      }
     }
   },
   mounted () {
-    this.calculate()
   },
   methods: {
     showMatrix () {
@@ -123,15 +186,20 @@ export default {
       })
     },
     simMethod (simMatrix, emptyMatrix, mEl) {
+      let k = 0
       let min = 0
       let minCol = false
+      let devider = false
       let minRow = {
         min: Infinity,
         index: 0,
         x: ''
       }
-      let k = 0
+      // Начало
       while (k < simMatrix[0].length - 1) {
+        // simMatrix.forEach((el) => {
+        //   console.log(el)
+        // })
         simMatrix.forEach((el, index) => {
           if (index + 1 == simMatrix.length) {
             el.forEach((el1, index1) => {
@@ -155,7 +223,6 @@ export default {
               if (j == minCol.index) {
                 if (j != 0) {
                   const division = (simMatrix[i][1] / simMatrix[i][j])
-                  console.log('division', division, simMatrix[i][1], '/', simMatrix[i][j], '[', simMatrix[i][0], '/', simMatrix[0][j], ']')
                   if (division >= 0 && division < minRow.min) {
                     minRow.min = division
                     minRow.index = i
@@ -166,62 +233,71 @@ export default {
             }
           }
         }
-
-        for (let i = 0; i < simMatrix.length; i++) {
-          for (let j = 0; j < simMatrix[i].length; j++) {
-            emptyMatrix[minRow.index][0] = minCol.x
-          }
-        }
-
-        for (let i = 0; i < simMatrix.length; i++) {
-          for (let j = 0; j < simMatrix[i].length; j++) {
-            if (j != 0 && i != 0) {
-              if (i == minRow.index) {
-                emptyMatrix[i][j] = simMatrix[i][j] / simMatrix[minRow.index][minCol.index]
-                console.log(simMatrix[minRow.index][minCol.index])
-                console.log('[', i, ',', j, ']', simMatrix[i][j], '/', simMatrix[minRow.index][minCol.index])
-              }
-            }
-          }
-        }
-
-        for (let i = 0; i < simMatrix.length; i++) {
-          for (let j = 0; j < simMatrix[i].length; j++) {
-            if (j != 0 && i != 0) {
-              if (i != minRow.index) {
-                emptyMatrix[i][j] = simMatrix[i][j] - (emptyMatrix[minRow.index][j] * simMatrix[i][minCol.index])
-                console.log('[', i, ',', j, ']', simMatrix[i][j], '-', emptyMatrix[minRow.index][j], '*', simMatrix[i][minCol.index])
-              }
-            }
-          }
-        }
-        simMatrix = emptyMatrix
-        console.log(minRow, minCol)
-        simMatrix.forEach((el) => {
-          console.log(el)
-        })
-
+        devider = simMatrix[minRow.index][minCol.index]
         for (let i = 0; i < emptyMatrix.length; i++) {
           for (let j = 0; j < emptyMatrix[i].length; j++) {
-            if (i == emptyMatrix.length - 1 && j != 0 && emptyMatrix[i][j] >= 0) {
-              k++
+            if (i != 0) {
+              if (i == minRow.index) {
+                if (j == 0) {
+                  emptyMatrix[i][j] = minCol.x
+                } else {
+                  emptyMatrix[i][j] = simMatrix[i][j] / devider
+                }
+              }
             }
           }
         }
-
-        if (k < simMatrix[0].length - 1) {
-          k = 0
+        // console.log(minRow, minCol)
+        // emptyMatrix.forEach((el) => {
+        //   console.log(el)
+        // })
+        for (let i = 0; i < emptyMatrix.length; i++) {
+          for (let j = 0; j < emptyMatrix[i].length; j++) {
+            if (i != 0 && j != 0 && i != minRow.index) {
+              emptyMatrix[i][j] = simMatrix[i][j] - emptyMatrix[minRow.index][j] * simMatrix[i][minCol.index]
+            }
+          }
         }
-
+        k = 0
         min = 0
         minCol = false
+        devider = false
         minRow = {
           min: Infinity,
           index: 0,
           x: ''
         }
-        console.log('//////////////////////////////////////////////////////////////////////////////////////////////////////////')
+
+        for (let j = 0; j < emptyMatrix[emptyMatrix.length - 1].length; j++) {
+          if (j != 0) {
+            if (emptyMatrix[emptyMatrix.length - 1][j] >= 0) {
+              k++
+            }
+          }
+        }
+        if (k < simMatrix[0].length - 1) {
+          for (let i = 0; i < emptyMatrix.length; i++) {
+            for (let j = 0; j < emptyMatrix[i].length; j++) {
+              simMatrix[i][j] = emptyMatrix[i][j]
+              if (i != 0 && j != 0) {
+                emptyMatrix[i][j] = 0
+              }
+            }
+          }
+        } else {
+          for (let i = 0; i < emptyMatrix.length; i++) {
+            for (let j = 0; j < emptyMatrix[i].length; j++) {
+              simMatrix[i][j] = emptyMatrix[i][j]
+              if (i != 0 && j != 0) {
+                emptyMatrix[i][j] = 0
+              }
+            }
+          }
+          break
+        }
       }
+
+      // Конец
       const xes = []
 
       simMatrix.forEach((el, index) => {
@@ -245,25 +321,35 @@ export default {
           }
         })
       })
-      this.xes = xes1
-
-      return simMatrix
+      return xes1
+      /// ////////////////////////////////////////////////////////////////
+      // console.log('simMatrix')
+      // simMatrix.forEach((el) => {
+      //   console.log(el)
+      // })
+      // console.log('emptyMatrix')
+      // emptyMatrix.forEach((el) => {
+      //   console.log(el)
+      // })
+      // console.log(minRow, minCol, devider)
+      // console.log(k)
+      /// ////////////////////////////////////////////////////////////////
+      // const k = 0
     },
     calculate () {
-      // const mEl = [[0.7, 0.4, 0.5], [0.2, 0.4, 0.6]]
-      // const prof = [5, 3]
-      // const wH = [40, 36, 36]
-      const mEl = [[1.1, 7, 3, 5], [20.5, 3, 5, 2], [13.4, 3, 10, 11]]
-      const prof = [4.2, 5, 9]
-      const wH = [150, 120.3, 100, 130]
+      let mEl = false
+      let prof = false
+      let wH = false
 
-      // const mEl = [[2, 0], [1, 2]]
-      // const prof = [2, 5]
-      // const wH = [430, 460]
-
-      // const mEl = this.matrix_elements
-      // const prof = this.profit
-      // const wH = this.working_hours
+      if (this.fill == true) {
+        mEl = [[1.1, 7, 3, 5], [20.5, 3, 5, 2], [13.4, 3, 10, 11]]
+        prof = [4.2, 5, 9]
+        wH = [150, 120.3, 100, 130]
+      } else {
+        mEl = this.matrix_elements
+        prof = this.profit
+        wH = this.working_hours
+      }
 
       mEl.forEach((el) => {
         el.forEach((el1) => {
@@ -324,6 +410,7 @@ export default {
           }
         }
       }
+
       for (let i = 0; i < simMatrix.length; i++) {
         for (let j = 0; j < simMatrix[i].length; j++) {
           if (i != 0 && j != 0) {
@@ -350,10 +437,34 @@ export default {
           }
         }
       }
-      this.firstMatr = simMatrix
-      console.log(this.firstMatr)
-      console.log(this.simMethod(simMatrix, emptyMatrix, mEl))
-      console.log(this.xes)
+      const firstMatrix = []
+      for (let i = 0; i < simMatrix.length; i++) {
+        firstMatrix.push([])
+        for (let j = 0; j < simMatrix[i].length; j++) {
+          firstMatrix[i].push(simMatrix[i][j])
+        }
+      }
+      this.firstMatrix = firstMatrix
+      const xes = this.simMethod(simMatrix, emptyMatrix, mEl)
+      this.xes = xes
+
+      for (let i = 0; i < firstMatrix.length; i++) {
+        for (let j = 0; j < firstMatrix[i].length; j++) {
+          if (j < mEl.length + 2 && j > 1 && j != 0 && i != 0) {
+            firstMatrix[i][j] = xes[firstMatrix[0][j]] * firstMatrix[i][j]
+          }
+        }
+      }
+
+      const y = []
+      for (let i = 0; i < firstMatrix.length - 2; i++) {
+        y.push([])
+        for (let j = 0; j < mEl.length; j++) {
+          y[i].push(firstMatrix[i + 1][j + 2])
+        }
+      }
+      this.y = y
+      this.success = true
     }
   }
 }
@@ -414,5 +525,33 @@ input::-webkit-inner-spin-button {
   padding: 10px;
   text-align: center;
   margin: 5px;
+}
+.y_row{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.a_row{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.y_row_el,.a_row_el{
+  border: 2px solid black;
+  margin: 10px;
+  min-width: 60px;
+  height: 60px;
+  padding: 5px;
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+}
+.Y,.A{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.y_text,.a_text{
+  font-size: 50px;
 }
 </style>
